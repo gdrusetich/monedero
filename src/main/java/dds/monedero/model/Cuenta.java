@@ -18,64 +18,72 @@ public class Cuenta {
     saldo = 0;
   }
 
-  public Cuenta(double montoInicial) {
+ /* public Cuenta(double montoInicial) {			Se crea una cuenta, y luego se le ingresa saldo.
     saldo = montoInicial;
-  }
-
+  }*/
+/*
   public void setMovimientos(List<Movimiento> movimientos) {
     this.movimientos = movimientos;
   }
-
+*/
   public void poner(double cuanto) {
     if (cuanto <= 0) {
       throw new MontoNegativoException(cuanto + ": el monto a ingresar debe ser un valor positivo");
     }
 
-    if (getMovimientos().stream().filter(movimiento -> movimiento.isDeposito()).count() >= 3) {
+    if (getMovimientos().stream().filter(movimiento -> movimiento.getMonto()>0).count() >= 3) {
       throw new MaximaCantidadDepositosException("Ya excedio los " + 3 + " depositos diarios");
     }
 
-    new Movimiento(LocalDate.now(), cuanto, true).agregateA(this);
+    Deposito unDeposito = new Deposito(LocalDate.now(), cuanto);
+    movimientos.add(unDeposito);
+    
   }
 
   public void sacar(double cuanto) {
-    if (cuanto <= 0) {
-      throw new MontoNegativoException(cuanto + ": el monto a ingresar debe ser un valor positivo");
-    }
-    if (getSaldo() - cuanto < 0) {
-      throw new SaldoMenorException("No puede sacar mas de " + getSaldo() + " $");
-    }
-    double montoExtraidoHoy = getMontoExtraidoA(LocalDate.now());
-    double limite = 1000 - montoExtraidoHoy;
-    if (cuanto > limite) {
-      throw new MaximoExtraccionDiarioException("No puede extraer mas de $ " + 1000
-          + " diarios, límite: " + limite);
-    }
-    new Movimiento(LocalDate.now(), cuanto, false).agregateA(this);
+	    if (cuanto <= 0) {
+	        throw new MontoNegativoException(cuanto + ": el monto a ingresar debe ser un valor positivo");
+	      }
+	      if (getSaldo() - cuanto < 0) {
+	        throw new SaldoMenorException("No puede sacar mas de " + getSaldo() + " $");
+	      }
+	      double limite = 1000 - this.getMontoExtraidoA(LocalDate.now());
+	      if (cuanto > limite) {
+	        throw new MaximoExtraccionDiarioException("No puede extraer mas de $ " + 1000
+	            + " diarios, límite: " + limite);
+	      }
+	
+    Extraccion unaExtraccion = new Extraccion(LocalDate.now(), cuanto);
+    this.movimientos.add(unaExtraccion);
   }
 
-  public void agregarMovimiento(LocalDate fecha, double cuanto, boolean esDeposito) {
-    Movimiento movimiento = new Movimiento(fecha, cuanto, esDeposito);
-    movimientos.add(movimiento);
-  }
 
   public double getMontoExtraidoA(LocalDate fecha) {
     return getMovimientos().stream()
-        .filter(movimiento -> !movimiento.isDeposito() && movimiento.getFecha().equals(fecha))
+        .filter(movimiento -> movimiento.getFecha().equals(fecha))
         .mapToDouble(Movimiento::getMonto)
         .sum();
   }
+  
+double calcularExtracciones() {
+	return this.movimientos.stream().filter(movimiento->!movimiento.esDeposito()).mapToDouble(movimiento->movimiento.getMonto()).sum();
+}
+
+double calcularDepositos() {
+	return this.movimientos.stream().filter(movimiento->movimiento.esDeposito()).mapToDouble(movimiento->movimiento.getMonto()).sum();
+}
 
   public List<Movimiento> getMovimientos() {
     return movimientos;
   }
 
   public double getSaldo() {
-    return saldo;
+this.saldo = this.calcularDepositos() - this.calcularExtracciones();
+	  return saldo;
   }
-
+/*
   public void setSaldo(double saldo) {
     this.saldo = saldo;
   }
-
+*/
 }
